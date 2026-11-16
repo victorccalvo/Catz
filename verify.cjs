@@ -1,14 +1,26 @@
 // Headless smoke test of game logic and both Canvas scene renderers.
 const fs = require('fs'), vm = require('vm'), assert = require('assert');
 const elements = new Map();
-function element() { return {style:{},dataset:{},clientWidth:960,open:false,children:[],textContent:'',innerHTML:'',setAttribute(){},append(x){this.children.push(x)},replaceChildren(){this.children=[]},addEventListener(){},showModal(){this.open=true},close(){this.open=false}}; }
+function element() { return {style:{},dataset:{},classList:{remove(){},toggle(){}},setPointerCapture(){},clientWidth:960,clientHeight:640,open:false,children:[],textContent:'',innerHTML:'',setAttribute(){},append(x){this.children.push(x)},replaceChildren(){this.children=[]},addEventListener(){},showModal(){this.open=true},close(){this.open=false}}; }
 const drawing = new Proxy({}, {get:()=>()=>{},set:()=>true});
 const storage = new Map();
-const context = vm.createContext({console,Math,JSON,document:{querySelector(s){if(!elements.has(s))elements.set(s,element());return elements.get(s)},querySelectorAll(){return []},createElement:element},window:{addEventListener(){}},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},requestAnimationFrame(){},setTimeout(){},clearTimeout(){},setInterval(){},clearInterval(){}});
+const buttons=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].map(key=>{const b=element();b.dataset.key=key;return b});
+const events={};
+const context = vm.createContext({console,Math,JSON,buttons,events,document:{querySelector(s){if(!elements.has(s))elements.set(s,element());return elements.get(s)},querySelectorAll(){return buttons},addEventListener(){},elementFromPoint(){return null},createElement:element},window:{innerWidth:1200,innerHeight:800,addEventListener(name,fn){events[name]=fn}},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},requestAnimationFrame(){},setTimeout(){},clearTimeout(){},setInterval(){},clearInterval(){}});
 context.document.querySelector('canvas').getContext=()=>drawing;
 vm.runInContext(fs.readFileSync('game.js','utf8'),context);
 vm.runInContext(`
 modal.close();
+const ev=id=>({pointerId:id,preventDefault(){}});
+buttons[0].onpointerdown(ev(1));buttons[3].onpointerdown(ev(2));
+if(!down('arrowup')||!down('arrowright'))throw Error('Two finger diagonal');
+buttons[0].onpointerup(ev(1));if(down('arrowup')||!down('arrowright'))throw Error('Independent finger release');
+buttons[3].onpointercancel(ev(2));if(down('arrowright'))throw Error('Cancelled touch stuck');
+buttons[0].onpointerdown(ev(3));events.blur();if(down('arrowup'))throw Error('Blur reset');
+window.innerWidth=844;window.innerHeight=390;canvas.clientWidth=844;canvas.clientHeight=348;resize();
+if(canvas.width!==960||canvas.height!==396)throw Error('Landscape aspect ratio');frame(40);if(camera.y<=0)throw Error('Landscape camera');
+window.innerWidth=390;window.innerHeight=844;
+
 state.x=215;state.y=260;movePlayer(0,-1,.05);if(state.y!==260)throw Error('Furniture collision');
 state.x=460;state.y=450;movePlayer(1,0,.05);if(facing!=='right'||state.x<=460)throw Error('Directional movement');
 canvas.clientWidth=390;resize();if(canvas.width!==600)throw Error('Mobile viewport');frame(80);if(camera.x<=0)throw Error('Mobile camera');
@@ -36,4 +48,5 @@ save();
 `,context);
 assert.equal(JSON.parse(storage.get('catz-save')).quests.Bento,'done');
 console.log('PASS: both scenes, collisions, all interaction routes, mobile camera, coffee, quests, upgrades, cleaning, travel and save.');
+
 

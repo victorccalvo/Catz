@@ -4,3 +4,24 @@
 @media(pointer:coarse){.touch{display:block}}
 @media(max-width:600px){canvas{min-height:0;object-fit:contain;aspect-ratio:600/640}main{padding:0 6px;margin-top:8px}.game{border:3px solid #e8e3ce;border-radius:10px}.hint{bottom:auto;top:45px;max-width:94%;white-space:normal;text-align:center;font-size:11px;padding:6px 10px}.touch{bottom:8px;left:8px;padding:3px}.touch button{min-width:44px;min-height:44px;padding:8px}#interact{bottom:18px;right:10px;padding:12px;font-size:12px}.location{top:8px}nav{max-width:235px}#sound{display:block;font-size:10px;padding:5px}header{height:auto;min-height:82px;padding:8px 12px;gap:10px}aside{grid-template-columns:1fr}.controls{display:none}footer{padding:0 16px;margin-top:15px}dialog{padding:28px 18px}dialog h2{font-size:21px}dialog button:not(.close){width:100%;margin:4px 0}body{padding-bottom:env(safe-area-inset-bottom)}}
 @media(max-height:520px) and (orientation:landscape){header{min-height:52px;height:52px}.brand{font-size:21px}main{margin:6px auto;display:block;max-width:790px}.game{max-height:calc(100dvh - 66px);width:auto;margin:auto;aspect-ratio:3/2}canvas{width:100%;height:100%;min-height:0;object-fit:contain}aside,footer{display:none}.touch{display:block}.hint{top:10px;bottom:auto}.location{display:none}}
+/* Touch controls are game surfaces, including their child labels. Keep browser
+   zoom available on the rest of the page; suppress selection on controls only. */
+.game,.game *,button,button *{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+button{touch-action:manipulation} .game{touch-action:none;overscroll-behavior:contain}
+.touch{display:none;gap:3px;background:#453c2830;border:1px solid #fff8d65c;box-shadow:0 3px 12px #382d2620;backdrop-filter:blur(4px)}
+.touch button{border:1px solid #fff4d49c;box-shadow:0 3px 0 #776a4a55;color:#59694d;background:#fffae8e8;font-size:19px;border-radius:12px;touch-action:none}
+.touch button.held{background:#c5d4a8;box-shadow:inset 0 2px 4px #61764b44;transform:translateY(2px)}
+@media(max-width:1000px),(pointer:coarse){.touch{display:block}}
+@media(orientation:landscape) and (max-height:600px){
+ html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none;background:#51694e;padding:0}
+ header{position:fixed;z-index:2;top:0;left:0;right:0;height:42px;min-height:42px;padding:0 max(14px,env(safe-area-inset-right)) 0 max(14px,env(safe-area-inset-left));background:#faf5e7f2;border:0;gap:8px}
+ .brand{font-size:19px;gap:7px}.brand span{font-size:17px;letter-spacing:4px}.brand small{display:none}
+ nav{flex-wrap:nowrap;max-width:none;gap:12px;font-size:11px}nav button,#sound{display:block;min-height:32px;padding:6px 10px;font-size:11px}
+ main{display:block;position:fixed;inset:42px 0 0;margin:0;padding:0;max-width:none}
+ .game{width:100%;height:100%;height:calc(100dvh - 42px);max-height:none;aspect-ratio:auto;border:0;border-radius:0;margin:0;box-shadow:none}
+ canvas{display:block;width:100%;height:100%;aspect-ratio:auto;min-height:0;object-fit:fill}
+ aside,footer,.location{display:none}.touch{display:block;bottom:max(12px,env(safe-area-inset-bottom));left:max(16px,env(safe-area-inset-left));padding:6px}
+ .touch button{min-width:49px;min-height:45px;padding:8px}#interact{bottom:max(22px,env(safe-area-inset-bottom));right:max(24px,env(safe-area-inset-right));min-width:108px;min-height:58px;border-radius:18px;font-size:14px}
+ .hint{top:10px;bottom:auto;font-size:12px;padding:7px 14px;max-width:60%;white-space:normal;text-align:center;pointer-events:none}
+ #toast{top:48px;width:max-content;max-width:65%;font-size:12px}dialog{max-height:calc(100dvh - 22px);width:min(560px,85vw);padding:22px 24px}dialog h2{font-size:20px;margin-bottom:10px}dialog p{font-size:13px;line-height:1.45}dialog button:not(.close){width:auto;min-height:42px;margin:4px}
+}

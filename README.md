@@ -14,6 +14,8 @@ Execute `Jogar-no-WiFi.cmd` no Windows ou `node server.cjs --lan` na pasta do pr
 
 Há botões direcionais, ação contextual e câmera horizontal que acompanha a protagonista em telas estreitas. O layout aceita retrato e paisagem. O teste em viewport móvel não substitui teste em um aparelho real. A versão hospedada em https://victorccalvo.github.io/Catz/ funciona fora dessa rede, via HTTPS. O iniciador Wi-Fi é apenas uma alternativa para desenvolvimento local.
 
+No celular de lado, o cenário ocupa a área disponível abaixo da barra compacta e a câmera acompanha os dois eixos. Desative o bloqueio de rotação do aparelho e vire o celular. Os controles não selecionam texto e suportam dois dedos para andar em diagonal. Soltar o toque, trocar de app ou girar o aparelho limpa as direções ativas. O zoom da página não é desabilitado globalmente. As proteções de toque foram verificadas em navegador desktop com viewport móvel; ainda precisam de conferência em Safari no iPhone real.
+
 WASD ou setas para andar; E para interagir; J para abrir o diário. Há controles de toque. Ative a música pelo botão Som. O progresso é salvo no localStorage do navegador; mudar de navegador, endereço ou limpar os dados pode perder o progresso. O save ainda não sincroniza entre dispositivos.
 
 ## O que já funciona

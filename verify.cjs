@@ -1,5 +1,6 @@
 // Headless smoke test of game logic and both Canvas scene renderers.
 const fs = require('fs'), vm = require('vm'), assert = require('assert');
+async function main(){
 const elements = new Map();
 function element() { return {style:{},dataset:{},classList:{remove(){},toggle(){}},setPointerCapture(){},clientWidth:960,clientHeight:640,open:false,children:[],textContent:'',innerHTML:'',setAttribute(){},append(x){this.children.push(x)},replaceChildren(){this.children=[]},addEventListener(){},showModal(){this.open=true},close(){this.open=false}}; }
 const drawing = new Proxy({}, {get:()=>()=>{},set:()=>true});
@@ -9,7 +10,7 @@ const events={};
 const context = vm.createContext({console,Math,JSON,buttons,events,document:{querySelector(s){if(!elements.has(s))elements.set(s,element());return elements.get(s)},querySelectorAll(){return buttons},addEventListener(){},elementFromPoint(){return null},createElement:element},window:{innerWidth:1200,innerHeight:800,addEventListener(name,fn){events[name]=fn}},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},requestAnimationFrame(){},setTimeout(){},clearTimeout(){},setInterval(){},clearInterval(){}});
 context.document.querySelector('canvas').getContext=()=>drawing;
 vm.runInContext(fs.readFileSync('game.js','utf8'),context);
-vm.runInContext(`
+await vm.runInContext(`(async()=>{
 modal.close();
 const ev=id=>({pointerId:id,preventDefault(){}});
 if(!dailyGoals().some(t=>t.includes('Limpar as caixinhas')))throw Error('Daily cleaning goal missing');
@@ -55,8 +56,23 @@ near=cafeObjects.find(o=>o.id==='door'); interact(); if(state.area!=='town') thr
 near=townObjects.find(o=>o.id==='flower'); interact(); if(state.flowers!==1) throw Error('Flower');
 talk('Lia'); $('#dialogContent').children.at(-1).onclick(); if(state.quests.Lia!=='done'||state.flowers!==0) throw Error('Flower quest');
 save();
+let resumedPlayed=false,releaseResume;
+audioCtx.state='suspended';audioCtx.resume=()=>new Promise(resolve=>{releaseResume=()=>{audioCtx.state='running';resolve()}});
+const pendingAudio=readyAudio(()=>{resumedPlayed=true});
+if(resumedPlayed)throw Error('Sound scheduled before resume');releaseResume();await pendingAudio;
+if(!resumedPlayed)throw Error('Sound missing after resume');
+audioCtx.state='interrupted';audioCtx.resume=()=>{audioCtx.state='running';return Promise.resolve()};
+if(!await readyAudio(()=>{}))throw Error('Interrupted audio recovery');
+audioCtx.state='suspended';audioCtx.resume=()=>Promise.reject(new Error('blocked'));
+if(await readyAudio(()=>{throw Error('Must not play blocked audio')}))throw Error('Blocked audio reported success');
+if(!audioMessage.includes('bloqueou'))throw Error('Missing audio error feedback');
+audioCtx.state='closed';if(!getAudio()||audioCtx.state!=='running')throw Error('Closed context recreation');
+})()
 `,context);
 assert.equal(JSON.parse(storage.get('catz-save')).quests.Bento,'done');
 console.log('PASS: both scenes, collisions, all interaction routes, mobile camera, coffee, quests, upgrades, cleaning, travel and save.');
 
 
+
+}
+main().catch(error=>{console.error(error);process.exitCode=1});

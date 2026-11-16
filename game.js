@@ -4,14 +4,27 @@
 let effectsEnabled=true;
 try{effectsEnabled=localStorage.getItem('catz-effects')!=='off'}catch{}
 const activeVoices=new Set();
+let audioMessage='Toque em Ativar e testar áudio para liberar o som.';
 function getAudio(){
  const Audio=window.AudioContext||window.webkitAudioContext;
- if(!Audio)return null;
- try{audioCtx??=new Audio();if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});return audioCtx}catch{return null}
+ if(!Audio){audioMessage='Este navegador não disponibilizou áudio. Abra o jogo no Safari ou Chrome.';return null}
+ try{
+  if(typeof navigator!=='undefined'&&navigator.audioSession)navigator.audioSession.type='playback';
+ }catch{}
+ try{if(!audioCtx||audioCtx.state==='closed')audioCtx=new Audio();return audioCtx}catch{audioMessage='Não foi possível iniciar o áudio. Reabra esta página no navegador.';return null}
 }
+function readyAudio(play){
+ const ac=getAudio();if(!ac){toast(audioMessage);return Promise.resolve(false)}
+ const run=()=>{if(ac.state!=='running'){audioMessage='Áudio pausado pelo aparelho. Toque novamente para ativar.';toast(audioMessage);return false}try{play(ac);audioMessage='Áudio ativado. Se estiver silencioso, confira o volume de mídia e a saída Bluetooth.';return true}catch{audioMessage='Falha ao reproduzir o som. Tente ativá-lo novamente.';toast(audioMessage);return false}};
+ if(ac.state==='running')return Promise.resolve(run());
+ // Safari may return suspended or interrupted after a lock, call or app switch.
+ // Resume synchronously inside the tap, then schedule sounds only after it resolves.
+ try{return Promise.resolve(ac.resume()).then(run,()=>{audioMessage='O navegador bloqueou o áudio. Toque em Ativar e testar áudio.';toast(audioMessage);return false})}catch{audioMessage='Não foi possível liberar o áudio. Tente novamente.';toast(audioMessage);return Promise.resolve(false)}
+}
+function testAudio(){return readyAudio(ac=>{const now=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.setValueAtTime(660,now);o.frequency.setValueAtTime(880,now+.18);g.gain.setValueAtTime(.0001,now);g.gain.linearRampToValueAtTime(.18,now+.025);g.gain.exponentialRampToValueAtTime(.0001,now+.45);o.connect(g);g.connect(ac.destination);o.onended=()=>{o.disconnect();g.disconnect()};o.start(now);o.stop(now+.5);toast('Teste: duas notas devem tocar agora.');})}
 function catSound(kind,name){
  if(!effectsEnabled)return;
- const ac=getAudio();if(!ac)return;
+ return readyAudio(ac=>{
  // Limit overlap when a player taps quickly, and clean up each completed voice.
  if(activeVoices.size>=3)activeVoices.values().next().value.stop();
  const sources=[],nodes=[];let timer;
@@ -20,21 +33,23 @@ function catSound(kind,name){
  try{
  const now=ac.currentTime,base=({Mochi:470,Canela:590,Nuvem:390}[name]||470)*(.94+Math.random()*.12);
  const duration=kind==='purr'?1.5:kind==='chirp'?.38:.72;
- const envelope=ac.createGain();nodes.push(envelope);envelope.gain.setValueAtTime(0,now);envelope.gain.linearRampToValueAtTime(kind==='purr'?.1:.045,now+.06);envelope.gain.exponentialRampToValueAtTime(.001,now+duration);envelope.connect(ac.destination);
+ const envelope=ac.createGain();nodes.push(envelope);envelope.gain.setValueAtTime(0,now);envelope.gain.linearRampToValueAtTime(kind==='purr'?.32:.12,now+.06);envelope.gain.exponentialRampToValueAtTime(.001,now+duration);envelope.connect(ac.destination);
  if(kind==='purr'){
  const noise=ac.createBuffer(1,Math.ceil(ac.sampleRate*duration),ac.sampleRate),data=noise.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(.35+.65*Math.pow(Math.sin(i/ac.sampleRate*Math.PI*27),4));
- const source=ac.createBufferSource(),filter=ac.createBiquadFilter();source.buffer=noise;filter.type='lowpass';filter.frequency.value=380;source.connect(filter);filter.connect(envelope);sources.push(source);nodes.push(filter);source.start(now);source.stop(now+duration);
+ const source=ac.createBufferSource(),filter=ac.createBiquadFilter();source.buffer=noise;filter.type='lowpass';filter.frequency.value=650;source.connect(filter);filter.connect(envelope);sources.push(source);nodes.push(filter);source.start(now);source.stop(now+duration);
  }else{
  const osc=ac.createOscillator(),filter=ac.createBiquadFilter();osc.type='sawtooth';osc.frequency.setValueAtTime(base*.7,now);osc.frequency.exponentialRampToValueAtTime(base*1.3,now+duration*.23);osc.frequency.exponentialRampToValueAtTime(base*.72,now+duration);
  filter.type='bandpass';filter.Q.value=2;filter.frequency.setValueAtTime(1500,now);filter.frequency.exponentialRampToValueAtTime(650,now+duration);osc.connect(filter);filter.connect(envelope);sources.push(osc);nodes.push(filter);osc.start(now);osc.stop(now+duration);
  }
  timer=setTimeout(()=>voice.stop(),(duration+.15)*1000);
- }catch{voice.stop()}
+ }catch(error){voice.stop();throw error}
+ });
 }
-function soundSettings(){show('🔊 Sons do café','Miados estilizados ao conversar e dar petiscos, um trinado ao brincar e ronrom ao alimentar ou acariciar. Música e efeitos podem ser ligados separadamente.',[
+function soundSettings(){show('🔊 Sons do café',audioMessage+'\n\nMiados estilizados ao conversar e dar petiscos, um trinado ao brincar e ronrom ao alimentar ou acariciar. Música e efeitos podem ser ligados separadamente.',[
+ ['Ativar e testar áudio',()=>{testAudio().then(()=>{if(modal.open)soundSettings()})}],
  [`Gatinhos: ${effectsEnabled?'ligados':'desligados'}`,()=>{effectsEnabled=!effectsEnabled;try{localStorage.setItem('catz-effects',effectsEnabled?'on':'off')}catch{}if(!effectsEnabled)for(const v of [...activeVoices])v.stop();else catSound('meow','Mochi');soundSettings()}],
- [`Música: ${musicTimer?'ligada':'desligada'}`,()=>{toggleMusic();soundSettings()}],
- ['Ouvir um ronrom',()=>catSound('purr','Nuvem')],['Ouvir um miado',()=>catSound('meow','Canela')]
+ [`Música: ${musicTimer?'ligada':'desligada'}`,()=>{Promise.resolve(toggleMusic()).then(()=>{if(modal.open)soundSettings()})}],
+ ['Ouvir um ronrom',()=>{if(!effectsEnabled){toast('Ligue os sons dos gatinhos primeiro.');return}catSound('purr','Nuvem')}],['Ouvir um miado',()=>{if(!effectsEnabled){toast('Ligue os sons dos gatinhos primeiro.');return}catSound('meow','Canela')}]
  ])}
 const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
 const $=s=>document.querySelector(s),modal=$('#modal');
@@ -99,6 +114,7 @@ window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','Arr
 window.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 window.addEventListener('blur',()=>{resetControls();save()});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){resetControls();save()}});
+document.addEventListener('pointerdown',()=>{if(audioCtx&&audioCtx.state!=='running')readyAudio(()=>{})},{capture:true});
 for(const button of directionButtons){
  button.onpointerdown=e=>{e.preventDefault();if(modal.open)return;button.setPointerCapture(e.pointerId);touchPointers.set(e.pointerId,button.dataset.key.toLowerCase());updateTouch()};
  button.onpointermove=e=>{if(!touchPointers.has(e.pointerId))return;e.preventDefault();const hit=document.elementFromPoint(e.clientX,e.clientY);const key=hit?.closest('[data-key]')?.dataset.key;if(key)touchPointers.set(e.pointerId,key.toLowerCase());updateTouch()};
@@ -174,6 +190,14 @@ function frame(time){
  ctx.restore();if(saveTimer>5){saveTimer=0;save();ui()}requestAnimationFrame(frame)
 }
 function playerLayer(){player();if(state.area==='cafe'){for(const c of cats)if(c.y>state.y+10)cat(c,elapsed);for(const [x,y] of [[215,235],[740,255],[740,460]])if(state.y<y+10)table(x,y)}else{for(const [x,y] of [[80,415],[885,420],[340,540],[850,600],[45,600]])if(state.y<y)tree(x,y)}}
-function toggleMusic(){if(musicTimer){clearInterval(musicTimer);musicTimer=null;return}if(!getAudio())return;let i=0,notes=[261.63,329.63,392,329.63,293.66,349.23,440,349.23,261.63,329.63,392,523.25,440,392,329.63,293.66];musicTimer=setInterval(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=notes[i++%notes.length];g.gain.setValueAtTime(0,audioCtx.currentTime);g.gain.linearRampToValueAtTime(.035,audioCtx.currentTime+.03);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.75);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.8)},480);};
+let musicRequest=0;
+function toggleMusic(){
+ if(musicTimer){musicRequest++;clearInterval(musicTimer);musicTimer=null;return}
+ const request=++musicRequest;
+ return readyAudio(ac=>{if(request!==musicRequest)return;let i=0;const notes=[261.63,329.63,392,329.63,293.66,349.23,440,349.23,261.63,329.63,392,523.25,440,392,329.63,293.66];
+ const note=()=>{if(ac.state!=='running')return;const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=notes[i++%notes.length];g.gain.setValueAtTime(0,ac.currentTime);g.gain.linearRampToValueAtTime(.07,ac.currentTime+.03);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.75);o.connect(g);g.connect(ac.destination);o.onended=()=>{o.disconnect();g.disconnect()};o.start();o.stop(ac.currentTime+.8)};
+ note();musicTimer=setInterval(note,480);
+ });
+}
 $('#sound').onclick=soundSettings;
 ui();requestAnimationFrame(frame);if(!localStorage.getItem('catz-welcome')){show('Bem-vinda ao Café dos Afetos ♥','Este cantinho é seu. Caminhe com WASD ou as setas e use E perto de gatos, móveis e moradores. No celular, use os botões na tela.\n\nCuide dos três gatinhos, prepare cafés no balcão e visite a vila pela saída ao sul. Ninguém está com pressa: você escolhe quando dormir e os pedidos não expiram.',[['Vamos abrir o café!',()=>{localStorage.setItem('catz-welcome','1');modal.close()}]])}

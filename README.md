@@ -38,6 +38,8 @@ O botão **Tarefas** está sempre na barra superior e reúne a lista diária (in
 
 Em **Áudio**, controle música e efeitos separadamente e experimente os sons. As vozes são sintetizadas no próprio navegador: miados com timbre por gato ao conversar/petiscar, trinado ao brincar e ronrom ao alimentar/acariciar. O navegador libera áudio após uma interação do usuário. A preferência de efeitos é salva localmente; não há arquivos de áudio externos nem uso do microfone.
 
+Se não ouvir, use **Áudio → Ativar e testar áudio**: duas notas são reproduzidas após a liberação do navegador. O jogo espera a retomada do AudioContext, recupera estados suspensos/interrompidos no próximo toque e solicita a sessão de reprodução de mídia quando suportada pelo Safari. Mensagens indicam bloqueios e falhas de inicialização. Confira também o volume de mídia e a saída Bluetooth; em versões sem suporte à sessão de mídia, o modo silencioso do iPhone pode afetar o som.
+
 `node verify.cjs` verifica desenho das duas áreas, colisão, direção, câmera móvel, atendimento, quests, compras e salvamento. O teste usa uma simulação de DOM/Canvas; conferir também o jogo em navegador real.
 
 ## Publicação

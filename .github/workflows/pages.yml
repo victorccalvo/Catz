@@ -1,0 +1,45 @@
+name: Publish Catz to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - game.js
+      - style.css
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check game
+        run: |
+          node --check game.js
+          node verify.cjs
+      - uses: actions/configure-pages@v5
+      - name: Prepare static game only
+        run: |
+          mkdir -p _site
+          cp index.html game.js style.css _site/
+          touch _site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - uses: actions/deploy-pages@v4
+        id: deployment

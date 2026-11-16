@@ -12,6 +12,16 @@ vm.runInContext(fs.readFileSync('game.js','utf8'),context);
 vm.runInContext(`
 modal.close();
 const ev=id=>({pointerId:id,preventDefault(){}});
+if(!dailyGoals().some(t=>t.includes('Limpar as caixinhas')))throw Error('Daily cleaning goal missing');
+journal();if(!$('#dialogContent').children[1].textContent.includes('Limpar as caixinhas'))throw Error('Landscape task journal');modal.close();
+const param={setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}};
+let played=0;
+window.AudioContext=class{constructor(){this.state='running';this.currentTime=0;this.sampleRate=8000;this.destination={}}resume(){return Promise.resolve()}createGain(){return {gain:param,connect(){},disconnect(){}}}createBiquadFilter(){return {frequency:param,Q:{value:0},connect(){},disconnect(){}}}createOscillator(){return {frequency:param,connect(){},start(){played++},stop(){},disconnect(){}}}createBuffer(ch,n){return {getChannelData(){return new Float32Array(n)}}}createBufferSource(){return {connect(){},start(){played++},stop(){},disconnect(){}}}};
+catSound('meow','Mochi');catSound('purr','Nuvem');catSound('chirp','Canela');
+if(played!==3)throw Error('Cat audio voices');
+catSound('meow','Mochi');if(activeVoices.size>3)throw Error('Audio overlap limit');
+effectsEnabled=false;const before=played;catSound('meow','Mochi');if(played!==before)throw Error('Audio mute');effectsEnabled=true;
+for(const voice of [...activeVoices])voice.stop();
 buttons[0].onpointerdown(ev(1));buttons[3].onpointerdown(ev(2));
 if(!down('arrowup')||!down('arrowright'))throw Error('Two finger diagonal');
 buttons[0].onpointerup(ev(1));if(down('arrowup')||!down('arrowright'))throw Error('Independent finger release');

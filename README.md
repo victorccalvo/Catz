@@ -34,6 +34,10 @@ Esta é uma base jogável, não o jogo completo. A protagonista agora tem quatro
 
 ## Verificação
 
+O botão **Tarefas** está sempre na barra superior e reúne a lista diária (incluindo limpeza das caixinhas), o bem-estar dos gatos e os pedidos dos moradores. Funciona também no modo paisagem, com rolagem no diário.
+
+Em **Áudio**, controle música e efeitos separadamente e experimente os sons. As vozes são sintetizadas no próprio navegador: miados com timbre por gato ao conversar/petiscar, trinado ao brincar e ronrom ao alimentar/acariciar. O navegador libera áudio após uma interação do usuário. A preferência de efeitos é salva localmente; não há arquivos de áudio externos nem uso do microfone.
+
 `node verify.cjs` verifica desenho das duas áreas, colisão, direção, câmera móvel, atendimento, quests, compras e salvamento. O teste usa uma simulação de DOM/Canvas; conferir também o jogo em navegador real.
 
 ## Publicação
